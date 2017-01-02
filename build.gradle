@@ -11,7 +11,7 @@ apply plugin: 'net.minecraftforge.gradle.forge'
 //Only edit below this line, the above code adds and enables the nessasary things for Forge to be setup.
 
 
-version = mc_version + "-1.0"
+version = project.minecraft.version + "-1.0"
 group= "moe.mickey.forge.nonupdate" // http://maven.apache.org/guides/mini/guide-naming-conventions.html
 archivesBaseName = "NonUpdate"
 ext.env = System.getenv()
