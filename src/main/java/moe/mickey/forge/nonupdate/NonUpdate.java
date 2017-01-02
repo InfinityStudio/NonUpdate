@@ -5,6 +5,10 @@ import java.io.IOException;
 import java.security.Permission;
 import java.util.List;
 
+import cpw.mods.fml.common.Mod;
+import cpw.mods.fml.common.Mod.EventHandler;
+import cpw.mods.fml.common.event.FMLConstructionEvent;
+import cpw.mods.fml.relauncher.FMLSecurityManager.ExitTrappedException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -12,10 +16,6 @@ import com.google.common.base.Charsets;
 import com.google.common.collect.ImmutableList;
 import com.google.common.io.Files;
 
-import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.common.Mod.EventHandler;
-import net.minecraftforge.fml.common.event.FMLConstructionEvent;
-import net.minecraftforge.fml.relauncher.FMLSecurityManager.ExitTrappedException;
 
 @Mod(modid = NonUpdate.MODID, version = NonUpdate.VERSION, dependencies = "before:*;")
 public class NonUpdate {
