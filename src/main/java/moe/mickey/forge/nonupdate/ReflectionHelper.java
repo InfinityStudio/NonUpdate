@@ -11,13 +11,15 @@ public class ReflectionHelper {
 	
 	static { resetReflection(); }
 	
-	protected static final Field refData = getField(Class.class, "reflectionData"), classLoader = getField(Class.class, "classLoader");
+	protected static final Field refData = getField(Class.class, "reflectionData");
 	
 	static {
 		ReflectionHelper.resetReflectionData(Class.class);
 		ReflectionHelper.resetReflectionData(System.class);
 		ReflectionHelper.resetReflectionData(ReflectionHelper.class);
 	}
+	
+	protected static final Field classLoader = getField(Class.class, "classLoader");
 	
 	static { setAccessible(ReflectionHelper.class); }
 	
