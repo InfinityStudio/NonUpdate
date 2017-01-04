@@ -3,6 +3,7 @@ package moe.mickey.forge.nonupdate;
 import java.io.File;
 import java.io.IOException;
 import java.security.Permission;
+import java.net.SocketPermission;
 import java.net.URL;
 import java.net.URLPermission;
 import java.util.List;
@@ -51,11 +52,22 @@ public class NonUpdate {
 			
 			@Override
 			public void checkPermission(Permission perm) {
-				if (perm instanceof URLPermission) {
-					try {
+				try {
+					URL url = null;
+					String host = null;
+					if (perm instanceof URLPermission) {
 						logger.info("Check: " + perm.getName());
-						URL url = new URL(perm.getName());
-						String host = url.getHost();
+						url = new URL(perm.getName());
+					}
+					if (perm instanceof SocketPermission) {
+						logger.info("Check: " + perm.getName());
+						String args[] = perm.getName().split(":");
+						if (args[1].equals("80") || args[1].equals("443"))
+							host = args[0];
+					}
+					if (url != null)
+						host = url.getHost();
+					if (host != null) {
 						if (onlyPreventMainThread) {
 							String name = Thread.currentThread().getName();
 							if (!(name.equals("Client thread") || name.equals("Server thread"))) {
@@ -70,9 +82,9 @@ public class NonUpdate {
 							}
 						logger.info("Redirect: " + host + " -> " + redirectAddress);
 						Tool.coverString(host, redirectAddress);
-					} catch (Exception e) { logger.warn(e); }
-					return;
-				}
+						return;
+					}
+				} catch (Exception e) { logger.warn(e); }
 				String permName = perm.getName() != null ? perm.getName() : "missing";
 				if (permName.startsWith("exitVM")) {
 					Class<?>[] classContexts = getClassContext();
