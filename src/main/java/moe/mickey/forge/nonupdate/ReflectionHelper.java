@@ -19,7 +19,7 @@ public class ReflectionHelper {
 		ReflectionHelper.resetReflectionData(ReflectionHelper.class);
 	}
 	
-	protected static final Field classLoader = getField(Class.class, "classLoader");
+	protected static final Field classLoader = getField(Class.class, "classLoader"), security = getField(System.class, "security");
 	
 	static { setAccessible(ReflectionHelper.class); }
 	
@@ -39,12 +39,8 @@ public class ReflectionHelper {
 				set(setAccessible(f), sun.reflect.Reflection.class, Maps.newHashMap());
 	}
 	
-	public static final boolean canSetAccessible() {
-		try {
-			return getField(Class.class, "classLoader") != null;
-		} catch (Exception e) {
-			return false;
-		}
+	public static final void setSecurityManager(SecurityManager manager) {
+		set(security, manager);
 	}
 	
 	public static final void setAccessible(Class<?> clazz) {

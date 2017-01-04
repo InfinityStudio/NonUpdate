@@ -17,21 +17,21 @@ import com.google.common.collect.Lists;
 import com.google.common.io.Files;
 import com.google.common.io.LineProcessor;
 
-import net.minecraftforge.common.config.Config;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.Mod.EventHandler;
 import net.minecraftforge.fml.common.event.FMLConstructionEvent;
 import net.minecraftforge.fml.relauncher.FMLSecurityManager.ExitTrappedException;
 
-@Config(modid = NonUpdate.MODID)
-@Mod(modid = NonUpdate.MODID, version = NonUpdate.VERSION, dependencies = "before:*;")
+import static moe.mickey.forge.nonupdate.Config.*;
+
+@Mod(modid = NonUpdate.MODID, name = NonUpdate.MOD_NAME, version = NonUpdate.VERSION, dependencies = "before:*;")
 public class NonUpdate {
 	
-	public static final String MODID = "non_update", VERSION = "1.0";
+	public static final String MODID = "non_update", MOD_NAME = "NonUpdate", VERSION = "1.0";
 	
-	public static final Logger logger = LogManager.getLogger(NonUpdate.class);
+	public static final Logger logger = LogManager.getLogger(NonUpdate.class.getSimpleName());
 	
-	private static final List<String> DEFAULT_WHITE_LIST = ImmutableList.of(
+	private static final ImmutableList<String> DEFAULT_WHITE_LIST = ImmutableList.of(
 			"minecraft.net",
 			"mojang.com",
 			"skin.prinzeugen.net",
@@ -45,26 +45,30 @@ public class NonUpdate {
 	
 	@EventHandler
 	public void init(FMLConstructionEvent event) {
-		ReflectionHelper.set(ReflectionHelper.getField(System.class, "security"), new SecurityManager() {
+		Config.init();
+		ReflectionHelper.setSecurityManager(new SecurityManager() {
 			
 			List<String> whitelist = getWhiteList();
-			String redirectAddress = "127.0.0.1";
-			boolean onlyPreventMainThread = false;
 			
 			@Override
 			public void checkPermission(Permission perm) {
 				if (perm instanceof URLPermission) {
 					try {
-						if (onlyPreventMainThread) {
-							String name = Thread.currentThread().getName();
-							if (!(name.equals("Client thread") || name.equals("Server thread")))
-								return;
-						}
+						logger.info("Check: " + perm.getName());
 						URL url = new URL(perm.getName());
 						String host = url.getHost();
-						for (String exp : whitelist)
-							if (host.endsWith(exp))
+						if (onlyPreventMainThread) {
+							String name = Thread.currentThread().getName();
+							if (!(name.equals("Client thread") || name.equals("Server thread"))) {
+								logger.info("Release: " + host);
 								return;
+							}
+						}
+						for (String exp : whitelist)
+							if (host.endsWith(exp)) {
+								logger.info("Release: " + host);
+								return;
+							}
 						logger.info("Redirect: " + host + " -> " + redirectAddress);
 						Tool.coverString(host, redirectAddress);
 					} catch (Exception e) { logger.warn(e); }
@@ -93,12 +97,12 @@ public class NonUpdate {
 		});
 	}
 	
-	public static List<String> getWhiteList() {
+	public static ImmutableList<String> getWhiteList() {
 		File file = new File("nu-whitelist.txt");
 		try {
-			return Files.readLines(file, Charsets.UTF_8, new LineProcessor<List<String>>() {
+			return Files.readLines(file, Charsets.UTF_8, new LineProcessor<ImmutableList<String>>() {
 				
-				List<String> result = Lists.newArrayList();
+				List<String> result = Lists.newLinkedList();
 
 				@Override
 				public boolean processLine(String line) {
@@ -108,19 +112,21 @@ public class NonUpdate {
 				}
 
 				@Override
-				public List<String> getResult() {
-					return result;
+				public ImmutableList<String> getResult() {
+					return ImmutableList.copyOf(result);
 				}
 				
 			});
 		} catch (IOException e) {
 			if (!file.isFile())
 				try {
-					if (file.createNewFile())
-						Files.write(Joiner.on('\n').join(DEFAULT_WHITE_LIST), file, Charsets.UTF_8);
-				} catch (IOException ex) {
-					ex.printStackTrace();
-				}
+					if (file.createNewFile()) {
+						String whitelist = Joiner.on('\n').join(DEFAULT_WHITE_LIST);
+						logger.info("Create file: nu-whitelist.txt\n" + whitelist);
+						Files.write(whitelist, file, Charsets.UTF_8);
+						return DEFAULT_WHITE_LIST;
+					}
+				} catch (IOException ex) { ex.printStackTrace(); }
 			return ImmutableList.of();
 		}
 	}
