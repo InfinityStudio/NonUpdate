@@ -8,6 +8,8 @@ import java.net.URL;
 import java.net.URLPermission;
 import java.util.List;
 
+import javax.annotation.Nullable;
+
 import cpw.mods.fml.common.Mod;
 import cpw.mods.fml.common.Mod.EventHandler;
 import cpw.mods.fml.common.event.FMLConstructionEvent;
@@ -51,40 +53,33 @@ public class NonUpdate {
 			List<String> whitelist = getWhiteList();
 			
 			@Override
-			public void checkPermission(Permission perm) {
-				try {
-					URL url = null;
-					String host = null;
-					if (perm instanceof URLPermission) {
-						logger.info("Check: " + perm.getName());
-						url = new URL(perm.getName());
-					}
-					if (perm instanceof SocketPermission) {
-						logger.info("Check: " + perm.getName());
-						String args[] = perm.getName().split(":");
-						if (args[1].equals("80") || args[1].equals("443"))
-							host = args[0];
-					}
-					if (url != null)
-						host = url.getHost();
-					if (host != null) {
-						if (onlyPreventMainThread) {
-							String name = Thread.currentThread().getName();
-							if (!(name.equals("Client thread") || name.equals("Server thread"))) {
-								logger.info("Release: " + host);
-								return;
-							}
-						}
-						for (String exp : whitelist)
-							if (host.endsWith(exp)) {
-								logger.info("Release: " + host);
-								return;
-							}
-						logger.info("Redirect: " + host + " -> " + redirectAddress);
-						Tool.coverString(host, redirectAddress);
+			public void checkConnect(String host, int port) {
+				checkConnect(host, port, null);
+			}
+			
+			@Override
+			public void checkConnect(String host, int port, @Nullable Object context) {
+				if (host.equals(redirectAddress) || port != 80 && port != 443)
+					return;
+				logger.info("Check: " + host + ":" + port);
+				if (onlyPreventMainThread) {
+					String name = Thread.currentThread().getName();
+					if (!(name.equals("Client thread") || name.equals("Server thread"))) {
+						logger.info("Release: " + host + ":" + port);
 						return;
 					}
-				} catch (Exception e) { logger.warn(e); }
+				}
+				for (String exp : whitelist)
+						if (host.endsWith(exp)) {
+							logger.info("Release: " + host + ":" + port);
+							return;
+						}
+				logger.info("Redirect: " + host + " -> " + redirectAddress);
+				Tool.coverString(host, redirectAddress);
+			}
+			
+			@Override
+			public void checkPermission(Permission perm) {
 				String permName = perm.getName() != null ? perm.getName() : "missing";
 				if (permName.startsWith("exitVM")) {
 					Class<?>[] classContexts = getClassContext();
