@@ -50,6 +50,10 @@ public class NonUpdate {
 			
 			List<String> whitelist = getWhiteList();
 			
+			private boolean isIP(String host) {
+				return host.matches("[0-9.]*") || host.contains(":");
+			}
+			
 			@Override
 			public void checkConnect(String host, int port) {
 				checkConnect(host, port, null);
@@ -57,7 +61,7 @@ public class NonUpdate {
 			
 			@Override
 			public void checkConnect(String host, int port, @Nullable Object context) {
-				if (host.equals(redirectAddress) || port != 80 && port != 443)
+				if (isIP(host) || port != 80 && port != 443)
 					return;
 				logger.info("Check: " + host + ":" + port);
 				if (onlyPreventMainThread) {
