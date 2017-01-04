@@ -3,6 +3,8 @@ package moe.mickey.forge.nonupdate;
 import java.io.File;
 import java.io.IOException;
 import java.security.Permission;
+import java.net.URL;
+import java.net.URLPermission;
 import java.util.List;
 
 import cpw.mods.fml.common.Mod;
@@ -13,44 +15,75 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import com.google.common.base.Charsets;
+import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Lists;
 import com.google.common.io.Files;
+import com.google.common.io.LineProcessor;
 
+import static moe.mickey.forge.nonupdate.Config.*;
 
-@Mod(modid = NonUpdate.MODID, version = NonUpdate.VERSION, dependencies = "before:*;")
+@Mod(modid = NonUpdate.MODID, name = NonUpdate.MOD_NAME, version = NonUpdate.VERSION, dependencies = "before:*;")
 public class NonUpdate {
 	
-	public static final String MODID = "non_update", VERSION = "1.0";
+	public static final String MODID = "non_update", MOD_NAME = "NonUpdate", VERSION = "1.0";
 	
-	public static final Logger logger = LogManager.getLogger(NonUpdate.class);
+	public static final Logger logger = LogManager.getLogger(NonUpdate.class.getSimpleName());
+	
+	private static final ImmutableList<String> DEFAULT_WHITE_LIST = ImmutableList.of(
+			"minecraft.net",
+			"mojang.com",
+			"skin.prinzeugen.net",
+			"fleey.org",
+			"www.skinme.cc"
+	);
+	
+	public String getFMLPackageName() {
+		return "cpw.mods.fml.";
+	}
 	
 	@EventHandler
 	public void init(FMLConstructionEvent event) {
-		ReflectionHelper.set(ReflectionHelper.getField(System.class, "security"), new SecurityManager() {
+		Config.init();
+		ReflectionHelper.setSecurityManager(new SecurityManager() {
 			
 			List<String> whitelist = getWhiteList();
 			
 			@Override
-			public void checkConnect(String host, int port) {
-				if (!whitelist.contains(host)) {
-					logger.info("check: " + host);
-					Tool.coverString(host, "127.0.0.1");
-				}
-			}
-			
-			@Override
 			public void checkPermission(Permission perm) {
+				if (perm instanceof URLPermission) {
+					try {
+						logger.info("Check: " + perm.getName());
+						URL url = new URL(perm.getName());
+						String host = url.getHost();
+						if (onlyPreventMainThread) {
+							String name = Thread.currentThread().getName();
+							if (!(name.equals("Client thread") || name.equals("Server thread"))) {
+								logger.info("Release: " + host);
+								return;
+							}
+						}
+						for (String exp : whitelist)
+							if (host.endsWith(exp)) {
+								logger.info("Release: " + host);
+								return;
+							}
+						logger.info("Redirect: " + host + " -> " + redirectAddress);
+						Tool.coverString(host, redirectAddress);
+					} catch (Exception e) { logger.warn(e); }
+					return;
+				}
 				String permName = perm.getName() != null ? perm.getName() : "missing";
 				if (permName.startsWith("exitVM")) {
 					Class<?>[] classContexts = getClassContext();
 					String callingClass = classContexts.length > 4 ? classContexts[4].getName() : "none";
 					String callingParent = classContexts.length > 5 ? classContexts[5].getName() : "none";
 					// FML is allowed to call system exit and the Minecraft applet (from the quit button)
-					if (!(callingClass.startsWith("cpw.mods.fml.")
+					if (!(callingClass.startsWith(getFMLPackageName())
 							|| "net.minecraft.server.dedicated.ServerHangWatchdog$1".equals(callingClass)
 							|| "net.minecraft.server.dedicated.ServerHangWatchdog".equals(callingClass)
-							|| ( "net.minecraft.client.Minecraft".equals(callingClass) && "net.minecraft.client.Minecraft".equals(callingParent))
-							|| ("net.minecraft.server.dedicated.DedicatedServer".equals(callingClass) && "net.minecraft.server.MinecraftServer".equals(callingParent)))
+							|| "net.minecraft.client.Minecraft".equals(callingClass) && "net.minecraft.client.Minecraft".equals(callingParent)
+							|| "net.minecraft.server.dedicated.DedicatedServer".equals(callingClass) && "net.minecraft.server.MinecraftServer".equals(callingParent))
 							)
 						throw new ExitTrappedException();
 				} else if ("setSecurityManager".equals(permName))
@@ -63,10 +96,36 @@ public class NonUpdate {
 		});
 	}
 	
-	public static List<String> getWhiteList() {
+	public static ImmutableList<String> getWhiteList() {
+		File file = new File("nu-whitelist.txt");
 		try {
-			return Files.readLines(new File("nu-whitelist.txt"), Charsets.UTF_8);
+			return Files.readLines(file, Charsets.UTF_8, new LineProcessor<ImmutableList<String>>() {
+				
+				List<String> result = Lists.newLinkedList();
+
+				@Override
+				public boolean processLine(String line) {
+					if (!line.startsWith("#"))
+						result.add(line);
+					return true;
+				}
+
+				@Override
+				public ImmutableList<String> getResult() {
+					return ImmutableList.copyOf(result);
+				}
+				
+			});
 		} catch (IOException e) {
+			if (!file.isFile())
+				try {
+					if (file.createNewFile()) {
+						String whitelist = Joiner.on('\n').join(DEFAULT_WHITE_LIST);
+						logger.info("Create file: nu-whitelist.txt\n" + whitelist);
+						Files.write(whitelist, file, Charsets.UTF_8);
+						return DEFAULT_WHITE_LIST;
+					}
+				} catch (IOException ex) { ex.printStackTrace(); }
 			return ImmutableList.of();
 		}
 	}
