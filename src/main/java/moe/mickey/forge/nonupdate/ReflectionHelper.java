@@ -14,9 +14,9 @@ public class ReflectionHelper {
 	protected static final Field refData = getField(Class.class, "reflectionData");
 	
 	static {
-		ReflectionHelper.resetReflectionData(Class.class);
-		ReflectionHelper.resetReflectionData(System.class);
-		ReflectionHelper.resetReflectionData(ReflectionHelper.class);
+		resetReflectionData(Class.class);
+		resetReflectionData(System.class);
+		resetReflectionData(ReflectionHelper.class);
 	}
 	
 	protected static final Field classLoader = getField(Class.class, "classLoader"), security = getField(System.class, "security");
@@ -44,7 +44,11 @@ public class ReflectionHelper {
 	}
 	
 	public static final void setAccessible(Class<?> clazz) {
-		set(classLoader, clazz, null);
+		setClassLoader(clazz, null);
+	}
+	
+	public static final void setClassLoader(Class<?> clazz, ClassLoader loader) {
+		set(classLoader, clazz, loader);
 	}
 	
 	public static final <T extends AccessibleObject> T setAccessible(T accessible) {

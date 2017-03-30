@@ -24,7 +24,7 @@ import net.minecraftforge.fml.relauncher.FMLSecurityManager.ExitTrappedException
 
 import static moe.mickey.forge.nonupdate.Config.*;
 
-@Mod(modid = NonUpdate.MODID, name = NonUpdate.MOD_NAME, version = NonUpdate.VERSION, dependencies = "before:*;")
+@Mod(modid = NonUpdate.MODID, name = NonUpdate.MOD_NAME, version = NonUpdate.VERSION , acceptedMinecraftVersions = "[1.8,1.11.2]", dependencies = "before:*;")
 public class NonUpdate {
 	
 	public static final String MODID = "non_update", MOD_NAME = "NonUpdate", VERSION = "1.0";
@@ -114,7 +114,7 @@ public class NonUpdate {
 
 				@Override
 				public boolean processLine(String line) {
-					if (!line.startsWith("#"))
+					if (!line.startsWith("#") && !line.isEmpty())
 						result.add(line);
 					return true;
 				}
