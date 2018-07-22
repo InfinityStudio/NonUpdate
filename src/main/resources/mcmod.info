@@ -1,0 +1,16 @@
+[
+{
+  "modid": "non_update",
+  "name": "NonUpdate",
+  "description": "Prevent all mod updates.",
+  "version": "2.0.0",
+  "mcversion": "*",
+  "url": "",
+  "updateUrl": "",
+  "authorList": ["NekoCaffine", "exzhawk", "tjsky", "SeraphJACK"],
+  "credits": "Mojang AB, and the Forge and FML guys.",
+  "logoFile": "",
+  "screenshots": [],
+  "dependencies": []
+}
+]
