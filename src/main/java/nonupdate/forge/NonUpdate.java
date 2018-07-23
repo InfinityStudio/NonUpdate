@@ -17,13 +17,8 @@ import org.apache.logging.log4j.Logger;
 import com.google.common.base.Charsets;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
-import com.google.common.eventbus.EventBus;
 import com.google.common.io.Files;
 
-import net.minecraftforge.fml.common.DummyModContainer;
-import net.minecraftforge.fml.common.LoadController;
-import net.minecraftforge.fml.common.ModMetadata;
-import net.minecraftforge.fml.relauncher.FMLSecurityManager.ExitTrappedException;
 
 // lower 1.7.10
 @cpw.mods.fml.relauncher.IFMLLoadingPlugin.Name(MOD_ID)
@@ -147,7 +142,7 @@ public class NonUpdate implements
 							|| "net.minecraft.server.dedicated.DedicatedServer".equals(callingClass) &&
 								"net.minecraft.server.MinecraftServer".equals(callingParent))
 							)
-						throw new ExitTrappedException();
+						throw new SecurityException("Can't exit by " + callingClass + " | " + callingParent);
 				} else if ("setSecurityManager".equals(permName))
 					throw new SecurityException("Cannot replace the FML security manager");
 			}
@@ -160,28 +155,9 @@ public class NonUpdate implements
 	
 	@Override
 	public void injectData(Map<String, Object> data) { }
-	
-	public static class ModContainer extends DummyModContainer  {
-		
-		public ModContainer() { this(new ModMetadata()); }
-		
-		public ModContainer(ModMetadata metadata) {
-			super(metadata);
-			metadata.modId = MOD_ID;
-			metadata.name = MOD_NAME;
-			metadata.version = MOD_VERSION;
-			metadata.authorList = ImmutableList.of("NekoCaffine", "exzhawk", "tjsky", "SeraphJACK");
-			metadata.description = "Prevent all mod updates.";
-			metadata.credits = "Mojang AB, and the Forge and FML guys.";
-		}
-		
-		@Override
-		public boolean registerBus(EventBus bus, LoadController controller) { return true; }
-
-	}
 
 	@Override
-	public String getModContainerClass() { return "nonupdate.forge.NonUpdate$ModContainer"; }
+	public String getModContainerClass() { return null; }
 
 	@Override
 	public String[] getASMTransformerClass() { return null; }
