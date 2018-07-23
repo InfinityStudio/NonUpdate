@@ -16,7 +16,7 @@ apply plugin: 'net.minecraftforge.gradle.forge'
 //Only edit below this line, the above code adds and enables the nessasary things for Forge to be setup.
 
 
-version = "2.0.0"
+version = "2.0.1"
 group= "nonupdate.forge" // http://maven.apache.org/guides/mini/guide-naming-conventions.html
 archivesBaseName = "NonUpdate"
 ext.env = System.getenv()
@@ -72,7 +72,7 @@ def commonManifest = {
 }
 
 jar {
-    baseName = "${archivesBaseName}-AllMCVersion-Final-${version}"
+    baseName = "${archivesBaseName}-AllMCVersion-Final"
     manifest commonManifest
     classifier = 'universal'
     
