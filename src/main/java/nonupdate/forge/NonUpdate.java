@@ -56,7 +56,7 @@ public class NonUpdate implements
 			ImmutableList.Builder<String> builder = ImmutableList.builder();
 			logger.info("Load file: nu-whitelist.txt");
 			String whitelist = Files.asCharSource(file, Charsets.UTF_8).read();
-			whitelist = whitelist.replace("\r\n", "\n");
+			whitelist = whitelist.replace("\r", "");
 			for (String line : whitelist.split("\n")) {
 				line = line.trim();
 				if (!line.startsWith("#") && !line.endsWith("#") && !line.isEmpty()) {

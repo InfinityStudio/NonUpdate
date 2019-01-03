@@ -11,7 +11,20 @@ public class ReflectionHelper {
 	
 	static { resetReflection(); }
 	
-	protected static final Field refData = getField(Class.class, "reflectionData");
+	protected static final Field refData;
+	
+	static {
+		Field ref;
+		try {
+			System.out.println("Try getField: reflectionData");
+			ref = getField(Class.class, "reflectionData");
+		} catch (Exception e) {
+			System.out.println("Maybe use OpenJ9");
+			System.out.println("Try getField: reflectCache");
+			ref = getField(Class.class, "reflectCache");
+		}
+		refData = ref;
+	}
 	
 	static {
 		resetReflectionData(Class.class);
@@ -34,7 +47,28 @@ public class ReflectionHelper {
 	}
 	
 	public static final void resetReflection() {
-		for(Field f : (Field[]) invoke(getMethod(Class.class, "getDeclaredFields0", boolean.class), sun.reflect.Reflection.class, false))
+		Field fields[];
+		try {
+			System.out.println("Try getDeclaredFields: getDeclaredFields0(boolean)");
+			fields = invoke(getMethod(Class.class, "getDeclaredFields0", boolean.class), sun.reflect.Reflection.class, false);
+		} catch (Exception e) {
+			try {
+				System.out.println("Try getDeclaredFields: getDeclaredFields0()");
+				fields = invoke(getMethod(Class.class, "getDeclaredFields0"), sun.reflect.Reflection.class);
+			} catch (Exception ex) {
+				System.out.println("Maybe use OpenJ9");
+				try {
+					System.out.println("Try getDeclaredFields: getDeclaredFieldsImpl(boolean)");
+					fields = invoke(getMethod(Class.class, "getDeclaredFieldsImpl", boolean.class), sun.reflect.Reflection.class, false);
+				} catch (Exception exx) {
+					System.out.println("Try getDeclaredFields: getDeclaredFieldsImpl()");
+					fields = invoke(getMethod(Class.class, "getDeclaredFieldsImpl"), sun.reflect.Reflection.class);
+				}
+			}
+		}
+		if (fields == null)
+			throw new NullPointerException("Can't getDeclaredFields");
+		for(Field f : fields)
 			if (f.getType() == Map.class)
 				set(setAccessible(f), sun.reflect.Reflection.class, Maps.newHashMap());
 	}
@@ -63,7 +97,6 @@ public class ReflectionHelper {
 				return setAccessible(clazz.getDeclaredField(name));
 			} catch (NoSuchFieldException e) {
 				clazz = clazz.getSuperclass();
-				continue;
 			}
 		throw new RuntimeException(new NoSuchFieldException(owner.getName() + "." + name));
 	}
@@ -100,7 +133,6 @@ public class ReflectionHelper {
 				return setAccessible(clazz.getDeclaredMethod(name, args));
 			} catch (NoSuchMethodException e) {
 				clazz = clazz.getSuperclass();
-				continue;
 			}
 		throw new RuntimeException(new NoSuchMethodException(owner.getName() + "#" + name));
 	}
