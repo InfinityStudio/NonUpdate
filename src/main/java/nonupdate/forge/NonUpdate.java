@@ -32,11 +32,11 @@ public class NonUpdate implements
 	//upper 1.8
 	net.minecraftforge.fml.relauncher.IFMLLoadingPlugin
 {
-	
+
 	public static final String MOD_ID = "non_update", MOD_NAME = "NonUpdate", MOD_VERSION = "2.0.0", MOD_PACKAGE = "nonupdate.forge.";
-	
+
 	public static final Logger logger = LogManager.getLogger(NonUpdate.class.getSimpleName());
-	
+
 	private static final ImmutableList<String> DEFAULT_WHITE_LIST = ImmutableList.of(
 			"# !!! DONT REMOVE THIS LINE !!! #",
 			"minecraft.net",
@@ -45,11 +45,11 @@ public class NonUpdate implements
 			"fleey.org",
 			"www.skinme.cc"
 	);
-	
+
 	public static String[] getFMLPackageNames() {
 		return new String[] { "net.minecraftforge.fml.", "cpw.mods.fml." };
 	}
-	
+
 	public static ImmutableList<String> getWhiteList() {
 		File file = new File("nu-whitelist.txt");
 		try {
@@ -79,47 +79,47 @@ public class NonUpdate implements
 			return ImmutableList.of();
 		}
 	}
-	
+
 	static {
 		Config.init();
 		ReflectionHelper.setSecurityManager(new SecurityManager() {
-			
+
 			List<String> whitelist = getWhiteList();
-			
+
 			String fmlPackageNames[] = getFMLPackageNames();
-			
+
 			private boolean isIP(String host) {
 				return host.matches("[0-9.]*") || host.contains(":");
 			}
-			
+
 			@Override
 			public void checkConnect(String host, int port) {
 				checkConnect(host, port, null);
 			}
-			
+
 			@Override
 			public void checkConnect(String host, int port, @Nullable Object context) {
 				if (isIP(host) || port != 80/* http */ && port != 443/* https */) {
-					logger.info("Release: " + host + ":" + port);
+					if (shouldLog) logger.info("Release: " + host + ":" + port);
 					return;
 				}
-				logger.info("Check: " + host + ":" + port);
+				if (shouldLog) logger.info("Check: " + host + ":" + port);
 				if (onlyPreventMainThread) {
 					String name = Thread.currentThread().getName();
 					if (!(name.equals("Client thread") || name.equals("Server thread"))) {
-						logger.info("Release: " + host + ":" + port);
+						if (shouldLog) logger.info("Release: " + host + ":" + port);
 						return;
 					}
 				}
 				for (String exp : whitelist)
 						if (host.endsWith(exp)) {
-							logger.info("Release: " + host + ":" + port);
+							if (shouldLog) logger.info("Release: " + host + ":" + port);
 							return;
 						}
-				logger.info("Redirect: " + host + " -> " + redirectAddress);
+				if (shouldLog) logger.info("Redirect: " + host + " -> " + redirectAddress);
 				Tool.coverString(host, redirectAddress);
 			}
-			
+
 			@Override
 			public void checkPermission(Permission perm) {
 				String permName = perm.getName() != null ? perm.getName() : "missing";
@@ -146,13 +146,13 @@ public class NonUpdate implements
 				} else if ("setSecurityManager".equals(permName))
 					throw new SecurityException("Cannot replace the FML security manager");
 			}
-			
+
 			@Override
 			public void checkPermission(Permission perm, Object context) { checkPermission(perm); }
-			
+
 		});
 	}
-	
+
 	@Override
 	public void injectData(Map<String, Object> data) { }
 
@@ -161,11 +161,11 @@ public class NonUpdate implements
 
 	@Override
 	public String[] getASMTransformerClass() { return null; }
-	
+
 	@Override
 	public String getSetupClass() { return null; }
 
 	@Override
 	public String getAccessTransformerClass() { return null; }
-	
+
 }
