@@ -16,11 +16,13 @@ public class Config {
 	
 	static boolean onlyPreventMainThread = false;
 	static String redirectAddress = /* "127.0.0.1"*/"0.0.0.0"; // https://github.com/InfinityStudio/NonUpdate/issues/4
+	static boolean shouldLog = true;
 	
 	private static void loadConfiguration() {
 		onlyPreventMainThread = configuration.getBoolean("onlyPreventMainThread", "Thread", onlyPreventMainThread,
 				"Only prevent main thread url access.");
 		redirectAddress = configuration.getString("redirectAddress", "Address", redirectAddress, "Redirect address.");
+		shouldLog = configuration.getBoolean("shouldLog", "Logging", shouldLog, "Should do logging.");
 	}
 
 }
